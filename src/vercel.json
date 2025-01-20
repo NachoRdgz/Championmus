@@ -1,0 +1,11 @@
+{
+    "version": 2,
+    "builds": [
+      {
+        "src": "**/*.{js,jsx,ts,tsx}",
+        "use": "@vercel/static-build"
+      }
+    ],
+    "ignoreBuildStep": true,
+    "next": false
+  }
