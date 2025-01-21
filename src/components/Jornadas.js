@@ -123,13 +123,23 @@ function Jornadas() {
         const snapshot = await getDocs(q);
         
         const nuevosResultados = inicializarResultados();
+        const partidosMap = new Map(); // Mapa para trackear el último resultado de cada partido
+
         snapshot.forEach((doc) => {
           const data = doc.data();
-          const { jornada, partidoIndex, resultados: resultadosPartido } = data;
-          if (jornada && partidoIndex !== undefined) {
+          const { jornada, partidoIndex, equipoLocal, equipoVisitante, resultados: resultadosPartido } = data;
+          
+          // Crear una clave única para el partido
+          const partidoKey = `${jornada}-${partidoIndex}`;
+          
+          // Solo guardar el resultado si no hemos procesado este partido antes
+          // (esto asegura que tomamos el más reciente debido al orderBy)
+          if (!partidosMap.has(partidoKey) && jornada && partidoIndex !== undefined) {
+            partidosMap.set(partidoKey, true);
             nuevosResultados[jornada - 1][partidoIndex] = resultadosPartido;
           }
         });
+        
         setResultados(nuevosResultados);
       } catch (error) {
         console.error("Error al cargar resultados:", error);
@@ -161,40 +171,36 @@ function Jornadas() {
     }
 
     try {
-      // Primero guardamos los resultados
       const equipoLocal = jornadas[jornadaActual][partidoIndex][0];
       const equipoVisitante = jornadas[jornadaActual][partidoIndex][1];
       const resultadosPartido = resultados[jornadaActual][partidoIndex];
 
+      // ID más simple pero que incluye timestamp para asegurar unicidad
+      const docId = `${jornadaActual + 1}-${equipoLocal}-${equipoVisitante}-${Date.now()}`;
+
       // Guardar en la colección results
-      await setDoc(
-        doc(db, "results", `Jornada-${jornadaActual + 1}-${equipoLocal}-${equipoVisitante}`),
-        {
-          jornada: jornadaActual + 1,
-          partidoIndex,
-          equipoLocal,
-          equipoVisitante,
-          resultados: resultadosPartido,
-          updatedAt: new Date(),
-          ultimaModificacionPor: auth.currentUser.email
-        }
-      );
+      await setDoc(doc(db, "results", docId), {
+        jornada: jornadaActual + 1,
+        partidoIndex,
+        equipoLocal,
+        equipoVisitante,
+        resultados: resultadosPartido,
+        updatedAt: new Date(),
+        ultimaModificacionPor: auth.currentUser.email,
+        version: Date.now()
+      });
 
-      // Luego publicamos en el blog
-      const mensaje = `Jornada ${jornadaActual + 1}: ${equipoLocal} vs ${equipoVisitante} - Resultados: ${resultadosPartido
-        .map((vaca, index) => `Vaca ${index + 1}: ${vaca.local}-${vaca.visitante}`)
-        .join(", ")}`;
-
+      // Publicar en el blog
       await setDoc(doc(collection(db, "messages")), {
         autor: auth.currentUser.email,
-        mensaje,
+        mensaje: `Jornada ${jornadaActual + 1}: ${equipoLocal} vs ${equipoVisitante} - Resultados: ${resultadosPartido
+          .map((vaca, index) => `Vaca ${index + 1}: ${vaca.local}-${vaca.visitante}`)
+          .join(", ")}`,
         createdAt: new Date(),
-        jornadaRef: `Jornada-${jornadaActual + 1}-${equipoLocal}-${equipoVisitante}`,
+        jornadaRef: docId,
         tipo: "resultado"
       });
 
-      //onResultadosChange(); // Recargar los resultados
-  
       alert("Resultado guardado y publicado correctamente");
     } catch (error) {
       console.error("Error al publicar resultado:", error);
@@ -326,7 +332,7 @@ function Jornadas() {
             </div>
 
             <div className="mt-4 flex justify-end">
-              <button
+            <button
                 onClick={() => publicarResultado(partidoIndex)}
                 className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
               >
@@ -341,3 +347,5 @@ function Jornadas() {
 }
 
 export default Jornadas;
+
+
