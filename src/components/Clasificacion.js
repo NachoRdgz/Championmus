@@ -83,12 +83,12 @@ const jornadas = [
     ["Javi y Canal", "Florido y Diego"]
   ],
   [
-    ["Agraz y Chulo", "Javi y Canal"],
-    ["Zopeque y Pareja", "Miguel y Seijas"],
+    ["Agraz y Chulo", "Zopeque y Pareja"],
+    ["Diego y Rafa", "Miguel y Seijas"],
     ["Arévalo y Rubén", "Jorge y Nacho"],
-    ["Serra y Gallardo", "Florido y Diego"],
-    ["Juli y Enrique", "Nico y Alex"],
-    ["Diego y Rafa", "Andrés y Oscar"]
+    ["Serra y Gallardo", "Javi y Canal"],
+    ["Juli y Enrique", "Florido y Diego"],
+    ["Nico y Alex", "Andrés y Oscar"]
   ]
 ];
 
